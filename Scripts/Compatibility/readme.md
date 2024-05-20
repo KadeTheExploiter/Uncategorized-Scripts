@@ -1,4 +1,4 @@
-Supported functions:
+# Adds these functions to exploit ennv.
 - getgenv (improved)
 - loadstring
 - request
