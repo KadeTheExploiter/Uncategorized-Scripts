@@ -1,4 +1,4 @@
--- this is my first fps script i ever made. please slaughter me
+-- this is my first fps script i ever made. please dont slaughter me
 	local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KadeTheExploiter/Uncategorized-Scripts/main/UI-Libraries/Bloom/UI.lua"))()
 	local Main = Library:Create("Kade's FPS Hub") -- Library:Create(<string: Name>, <Color3: DetailColor>, <Color3: TextColor>)
 	local TabH = Main.MakeTab("Home - Kade's FPS Hub", 6023426922) -- Main.MakeTab(<string: Tab_Name>, <Int: Icon_Texture_ID>
