@@ -57,7 +57,7 @@ function Library:Create(Name, Color, FontColor2)
 
 
 	Pinkware.Name = "Pinkware"
-  local cloneref = cloneref or function(x) return x end
+	local cloneref = cloneref or function(x) return x end
 	Pinkware.Parent = cloneref(game:GetService("CoreGui"))
 
 	Main.Name = "Main"
@@ -172,6 +172,10 @@ function Library:Create(Name, Color, FontColor2)
 	end
 
 	local Children = {
+		IsVisible = function(Boolean)
+			Main.Visible = Boolean or not Main.Visible
+		end,
+		
 		MakeTab = function(Name, Icon)
 
 			local RealIcon = "http://www.roblox.com/asset/?id="..Icon
