@@ -81,14 +81,16 @@
 		print(Player.Name, Player.Parent, Player.Team)
 		local Humanoid = wait_for_child_of_class(Character, "Humanoid", 2)
 		local PlayerPart = wait_for_child_of_class(Character, "BasePart", 2, "HumanoidRootPart") or Character.PrimaryPart
-		local Billboard = Instance.new("BillboardGui")
-		local Border = Instance.new("UIStroke")
-		
-		local Highlight = Instance.new("Frame")
-		local Name = Instance.new("TextLabel")
-		local TextSize = Instance.new("UITextSizeConstraint")
+
 		
 		if PlayerPart and not PlayerPart:FindFirstChild("sudo rm -rf /") then
+			local Billboard = Instance.new("BillboardGui")
+			local Border = Instance.new("UIStroke")
+			
+			local Highlight = Instance.new("Frame")
+			local Name = Instance.new("TextLabel")
+			local TextSize = Instance.new("UITextSizeConstraint")
+			
 			local MyTeam = Local.Team and Teams[Local.Team.Name] or nil
 			local Team = Player.Team and Teams[Player.Team.Name] or nil
 
