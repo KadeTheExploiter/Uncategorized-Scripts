@@ -7,7 +7,7 @@
 # If it does not work, Go to Aimbot Tab and Enable "Aimbot Include Team"
 # Loadstring Module:
 ```lua
-getfenv(0).KadeKeybindAimbot = Enum.KeyCode.E
-getfenv(0).KadeKeybindHide = Enum.KeyCode.RightShift
+KadeKeybindAimbot = Enum.KeyCode.E
+KadeKeybindHide = Enum.KeyCode.RightShift
 loadstring(game:HttpGet("https://raw.githubusercontent.com/KadeTheExploiter/Uncategorized-Scripts/main/Scripts/KadesFPSGui/src.lua"))()
 ```
