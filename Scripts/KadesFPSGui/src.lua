@@ -221,7 +221,7 @@
 						else
 							local RootDistance = (MyRoot.Position - Root.Position).Magnitude
 	
-							if Humanoid.Health ~= 0 RootDistance < NearestDistance then
+							if Humanoid.Health ~= 0  and RootDistance < NearestDistance then
 								NearestDistance = RootDistance
 								NearestCharacter = Character
 							end
