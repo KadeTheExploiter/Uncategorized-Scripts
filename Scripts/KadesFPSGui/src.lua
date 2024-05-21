@@ -202,18 +202,19 @@
 			if Character and Local.Character and Character.Name ~= Local.Character.Name and (Aimbot_TeamCheck or v.Team ~= Local.Team)  then
 				local Root = ffcoc_and_name(Character, "BasePart", "HumanoidRootPart")
 				local MyRoot = ffcoc_and_name(Local.Character, "BasePart", "HumanoidRootPart")
-				if Root and MyRoot then
+				local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+				if Root and MyRoot and Humanoid then
 						if Aimbot_Method == "Mouse" then
 							local RootPosition = Root.Position
 							local Distance = (RootPosition - Mouse.Hit.p).Magnitude
-							if Distance < NearestDistance then
+							if Humanoid.Health ~= 0 and Distance < NearestDistance then
 								NearestDistance = Distance
 								NearestCharacter = Character
 							end
 						else
 							local RootDistance = (MyRoot.Position - Root.Position).Magnitude
 	
-							if RootDistance < NearestDistance then
+							if Humanoid.Health ~= 0 RootDistance < NearestDistance then
 								NearestDistance = RootDistance
 								NearestCharacter = Character
 							end
