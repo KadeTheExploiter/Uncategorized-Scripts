@@ -4,6 +4,7 @@
   - Aimbot (Mouse and Distance Check, Teamcheck, Partcheck (Head, HRP, PrimaryPart)
   - Supported for almost any exploit that support CoreGui access.
  
+# If it does not work, Go to Aimbot Tab and Enable "Aimbot Include Team"
 # Loadstring Module:
 ```lua
 getfenv(0).KadeKeybindAimbot = Enum.KeyCode.E
