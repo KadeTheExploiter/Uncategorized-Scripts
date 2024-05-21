@@ -36,10 +36,10 @@ local Highlights = {}
 local Names = {}
 local HealthBars = {}
 
-local HideUI = getfenv(0).KadeKeybindHide or Enum.KeyCode.RightShift
+local HideUI = KadeKeybindHide or Enum.KeyCode.RightShift
 local Aimbot_Enabled = false
 local Aimbot_TeamCheck = false
-local Aimbot_Bind = getfenv(0).KadeKeybind or Enum.KeyCode.E
+local Aimbot_Bind = KadeKeybind or Enum.KeyCode.E
 local Aimbot_Focus = "PrimaryPart"
 local Aimbot_Method = "Mouse"
 local ESP_ShowHP = true
