@@ -1,15 +1,20 @@
 -- this is my first fps script i ever made. please dont slaughter me
+	local cloneref = cloneref or function(x) return x end
+	local CoreGui = cloneref(game:FindFirstChildOfClass("CoreGui"))
+	if CoreGui:FindFirstChild("Pinkware") then
+		print('already running')
+		return
+	end
+
 	local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KadeTheExploiter/Uncategorized-Scripts/main/UI-Libraries/Bloom/UI.lua"))()
 	local Main = Library:Create("Kade's FPS Hub") -- Library:Create(<string: Name>, <Color3: DetailColor>, <Color3: TextColor>)
 	local TabH = Main.MakeTab("Home - Kade's FPS Hub", 6023426922) -- Main.MakeTab(<string: Tab_Name>, <Int: Icon_Texture_ID>
 	local Main = TabH.MakeSection("Main")
 	local ESP = TabH.MakeSection("ESP")
 	local BOT = TabH.MakeSection("Aimbot")
-
-	local cloneref = cloneref or function(x) return x end
+	
 	local workspace = cloneref(game:FindFirstChildOfClass("Workspace"))
 	local Teams = cloneref(game:FindFirstChildOfClass("Teams"))
-	local CoreGui = cloneref(game:FindFirstChildOfClass("CoreGui"))
 	local Players = cloneref(game:FindFirstChildOfClass("Players"))
 	local UserInput = cloneref(game:FindFirstChildOfClass("UserInputService"))
 	local Camera = workspace.CurrentCamera
@@ -229,7 +234,11 @@
 	Main.Label("Created by @xyzkade.") -- Section.Label(<string: Text>) / Label.UpdateLabel(<string: UpdatedText>)
 	
 	Main.Button("Close", function()
+		for _,v in next, Events do
+			v:Disconnect()
+		end
 
+		UI:Destroy()
 	end)
 
 	ESP.Toggle("Enable Highlight ESP", false, function(Bool)  -- Section.Toggle(<string: Text>, <boolean: DefaultBool>, <function: Callback>)
