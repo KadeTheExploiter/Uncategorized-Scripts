@@ -283,7 +283,7 @@
 		end
 	end)
 
-	BOT.Toggle("Aimbot Include Team", false, function(Bool)
+	BOT.Toggle("Aimbot Include Team", true, function(Bool)
 		Aimbot_TeamCheck = Bool
 	end)
 	BOT.Dropdown("Aimbot Focus",{"Head", "HumanoidRootPart", "PrimaryPart"}, function(String) -- Section.Dropdown(<string: Text>, <table: Table>, <function: Callback>)
