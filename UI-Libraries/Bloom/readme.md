@@ -6,6 +6,7 @@
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KadeTheExploiter/Uncategorized-Scripts/main/UI-Libraries/Bloom/UI.lua"))()
 -- find icons here https://www.roblox.com/users/2050262468/inventory/#!/decals (make sure to get their textureid!)
+-- Main:IsVisible(<boolean> or nil (switches between true and false) -- Switch UI Visibility
 local Main = Library:Create("Hello") -- Library:Create(<string: Name>, <Color3: DetailColor>, <Color3: TextColor>)
 local TabH = Main.MakeTab("Home", 6023426922) -- Main.MakeTab(<string: Tab_Name>, <Int: Icon_Texture_ID>
 local TabS = Main.MakeTab("Scripts", 6034837807)
