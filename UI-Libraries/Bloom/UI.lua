@@ -56,8 +56,8 @@ function Library:Create(Name, Color, FontColor2)
 	local TabFolder = Instance.new("Folder")
 
 
-	Pinkware.Name = "Pinkware"
-	local cloneref = cloneref or function(x) return x end
+	Pinkware.Name = "Pinkware" -- no execs have working cloneref
+	local cloneref =  function(x) return x end
 	Pinkware.Parent = cloneref(game:GetService("CoreGui"))
 
 	Main.Name = "Main"
