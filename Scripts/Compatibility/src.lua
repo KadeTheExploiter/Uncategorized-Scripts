@@ -1,6 +1,6 @@
 local Global = getfenv(2)
 local FakeCoreGuiEnv = game:FindFirstChildOfClass("CoreGui"):FindFirstChild("CoreScriptLocalization")
-local VirtualInputManager = game:FindFirstChildOfClass("VirtualInputManager")
+local VirtualInputManager = Instance.new("VirtualInputManager")
 local HttpService = game:GetService("HttpService")
 
 Global.getgenv = Global
