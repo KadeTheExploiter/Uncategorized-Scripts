@@ -18,7 +18,7 @@
   end
 
   local Options = {
-    OverrideFunctions = true, -- If the executor Overrides already existing functions
+    OverrideFunctions = false, -- If the executor Overrides already existing functions
     enviroment = setmetatable({}, {__protected = 'This metatable is protected'}),-- i don't really care if you unprotect it.
     OverrideIgnore = {'loadstring', 'checkcaller', 'isexecutorclosure', 'isourclosure', 'isexecclosure', 'request', 'getinstances', 'getnilinstances', 'getloadedmodules', 'httpget'} -- Functions you don't wanna override if they already exist
   }
