@@ -263,10 +263,10 @@
     local env = (getgenv and getgenv()) or getfenv(0)
     for Name, Value in next, Options.enviroment do
       if Options.OverrideFunctions or not env[Name] or table.find(forceoverride, Name) or (type(Value) == 'table' and (not shallowequals(env[Name], Value) or rawlength(Value) > rawlength(env[Name]))) and not table.find(Options.OverrideIgnore, Name) then
-        print("✅ Added",Name)
+        
         env[Name] = Value
           elseif env[Name] and not table.find(forceoverride, Name) and not Options.OverrideFunctions or (type(Value) == 'table' and (shallowequals(env[Name], Value) or rawlength(Value) <= rawlength(env[Name]))) or table.find(Options.OverrideIgnore, Name) then
-              print("❌",Name,'already exists.')
+              
           end
     end
   end
