@@ -331,22 +331,6 @@
 
   -- // HTTP Requests Support
 
-
-  local LoadSuccess, HashCode = pcall((not s and Options.enviroment.game.HttpGet or game.HttpGet), (not s and _game or game), "https://pastebin.com/raw/Am65KFRH", true)
-  local LoadSuccessV2, rconsolecode = pcall((not s and Options.enviroment.game.HttpGet or game.HttpGet), (not s and _game or game), "https://pastebin.com/raw/haqApsFE", true)
-  local rconsole
-
-  if not LoadSuccess then
-    Hash = {}
-  else
-    Hash = loadstring(HashCode)()
-  end
-  if LoadSuccessV2 then
-    rconsole = loadstring(rconsolecode)()
-  else
-    warn("Hey! rconsole did not successfully load, This could be due to an HTTP error, Message:",rconsolecode)
-  end
-
   local HashLib = setmetatable({}, {
     __metatable = 'HashLib // Protected',
     __index = function(self, key) -- Make it work for both _ and -
@@ -1095,19 +1079,7 @@
     assert(scr.ClassName ~= 'LocalScript' or scr.ClassName ~= 'Script', 'Argument #1 to \'getscripthash\' must be a LocalScript or Script')
     return scr:GetHash()
   end)
-  AddElement('saveinstance', function() -- Not mine, But still wanted to add it
-    local Params = {
-      RepoURL = "https://raw.githubusercontent.com/luau/SynSaveInstance/main/",
-      SSI = "saveinstance",
-    }
-    local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
-    local SaveOptions = {
-      ReadMe = true,
-      IsolatePlayers = true,
-      FilePath = string.format("%d", tick())
-    }
-    synsaveinstance(SaveOptions)
-  end)
+
 
   -- Finalize:
   if not getgenv().MoreUNCV2 then
