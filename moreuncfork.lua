@@ -849,9 +849,6 @@
   AddElement('getscripts', function()
     local a = {}for _, v in next, game:GetDescendants() do if v.ClassName == 'ModuleScript' or v.ClassName == 'LocalScript' then table.insert(a, v) end end;return a
   end)
-  AddElement('getloadedmodules', function()
-    local a = {}for _, v in next, game:GetDescendants() do if v.ClassName == 'ModuleScript' then table.insert(a, v) end end;return a
-  end)
   AddElement('getcallingscript', function()
     local Source = debug.info(1, 's')
     for i, v in next, game:GetDescendants() do if v:GetFullName() == Source then return v end end
