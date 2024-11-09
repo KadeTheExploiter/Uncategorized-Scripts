@@ -1,0 +1,792 @@
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:FindFirstChildOfClass("ReplicatedStorage")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+
+local CurrentTab = nil
+local CurrentTabOpener = nil
+
+local ScreenGui = script.Parent
+
+local Assets = ScreenGui:WaitForChild("Assets")
+local Main = ScreenGui:WaitForChild("Main")
+
+local Top = Main:WaitForChild("Top")
+local Centre = Main:WaitForChild("Centre")
+
+local TabsFolder = Centre:WaitForChild("Tabs")
+local TabList = Centre:WaitForChild("TabList")
+
+local NewTab = Top:WaitForChild("NewTab")
+local RemoveTab = Top:WaitForChild("RemoveTab")
+local Clear = Top:WaitForChild("Clear")
+local Execute = Top:WaitForChild("Execute")
+local Scripts = Top:WaitForChild("Scripts")
+local ScriptHub = Top:WaitForChild("ScriptHub")
+
+local UserInputService = game:GetService("UserInputService")
+
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+Top.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = Main.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+Top.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		update(input)
+	end
+end)
+
+
+local function HideTabs()
+	for _,v in TabsFolder:GetChildren() do
+		v.Visible = false
+	end
+
+	for _,v in TabList:GetChildren() do
+		if v:IsA("TextButton") then
+			v.BackgroundTransparency = 1
+		end
+	end
+end
+
+local NewTabSignal = NewTab.MouseButton1Down:Connect(function()
+	local NewTab = Assets:WaitForChild("Tab"):Clone()
+	local TabOpener = Assets:WaitForChild("TabOpener"):Clone()
+	local ScrollingFrame = NewTab:WaitForChild("ScrollingFrame")
+
+	local Textbox = ScrollingFrame:WaitForChild("TextBox")
+	local LineCounter = ScrollingFrame:WaitForChild("LineCounter")
+
+	HideTabs()
+
+	NewTab.Visible = true
+	TabOpener.Visible = true
+	TabOpener.BackgroundTransparency = 0.9
+
+	local String = "Tab "..tostring(#TabList:GetChildren())
+
+	TabOpener.Name = String
+	TabOpener.Text = String
+
+	NewTab.Name = String
+	NewTab.Parent = TabsFolder
+	TabOpener.Parent = TabList
+
+	local NewTabLiner = Textbox:GetPropertyChangedSignal("Text"):Connect(function()
+		local _, Count = Textbox.text:gsub("\n", "")
+
+		LineCounter.Text = ""
+		for Number = 0, Count do
+			LineCounter.Text = LineCounter.Text..tostring(Number+1).."\n"
+		end
+	end)
+
+	local TabOpenerSignal = TabOpener.MouseButton1Down:Connect(function()
+		HideTabs()
+
+		NewTab.Visible = true
+		TabOpener.BackgroundTransparency = 0.9
+
+		CurrentTab = NewTab
+		CurrentTabOpener = TabOpener
+	end)
+
+	CurrentTab = NewTab
+	CurrentTabOpener = TabOpener
+end)
+
+local RemoveTabSignal = RemoveTab.MouseButton1Down:Connect(function()
+	local Count = #TabsFolder:GetChildren()
+
+	if CurrentTab and CurrentTabOpener then
+		CurrentTab:Destroy()
+		CurrentTabOpener:Destroy()
+		HideTabs()
+
+		if Count > 1 then
+			local String = "Tab "..tostring(Count-1)
+			local String2 = "Tab "..tostring(Count-1)
+			local String3 = "Tab "..tostring(Count+1)
+			CurrentTab = TabsFolder:FindFirstChild(String) or TabsFolder:FindFirstChild(String2) or TabsFolder:FindFirstChild(String3) or TabsFolder:FindFirstChildOfClass("Frame")  
+			CurrentTabOpener = TabList:FindFirstChild(String) or TabList:FindFirstChild(String2) or TabList:FindFirstChild(String3) or TabList:FindFirstChildOfClass("TextButton")
+
+			CurrentTab.Visible = true
+			CurrentTabOpener.BackgroundTransparency = 0.9
+		else
+			CurrentTab = nil
+			CurrentTabOpener = nil
+		end
+	end
+end)
+
+local ClearTabSignal = Clear.MouseButton1Down:Connect(function()
+	if CurrentTab then
+		local Textbox = CurrentTab:WaitForChild("ScrollingFrame"):WaitForChild("TextBox")
+
+		Textbox.Text = ""
+	end
+end)
+
+local Send = ReplicatedStorage:FindFirstChild("SendHttp")
+local Receive = ScreenGui:WaitForChild("ReceiveHttp")
+
+local Game = game
+local NewProxy = newproxy(true)
+local Metatable = getmetatable(NewProxy)
+local NilInstances = {}
+
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+
+local IsActive = true
+
+-- // Metatable 
+
+local CallRequest = function(Options)
+	Send:FireServer(Options)
+
+	local Output = Receive.OnClientEvent:Wait()
+
+	while true do
+		if Output then
+			return Output
+		end
+	end
+end -- genv.request({Url = url, Method = "GET"}).Body
+
+local HttpService = game:GetService("HttpService")
+
+
+local GetService = function(Service)
+	return game:GetService(Service)
+end
+
+Metatable.__index = function(self, Key, Value)
+	if tostring(Key) == "HttpGet" or tostring(Key) == "HttpGetAsync" then 
+		return function(s, url, idk) 
+			return CallRequest(tostring(url)).Body
+		end
+	elseif tostring(Key) == "CoreGui" then
+		return PlayerGui.CoreGui
+	elseif tostring(Key) == "GetService" or tostring(Key) == "FindService" or tostring(Key) == "service" then 
+		return function(_, name)
+			if name ~= "CoreGui" then
+				print(name)
+				return GetService(name) -- Causes to repeat again. it's like a loop.
+			else
+				return PlayerGui.CoreGui
+			end
+		end
+	else
+		local gameMethod = Game[Key]
+		if typeof(gameMethod) == "function" then
+			return function(_, ...)
+				return gameMethod(Game, ...)
+			end
+		end
+		return gameMethod
+	end
+end
+
+Metatable.__newindex = function(self, Key, Value)
+	Game[Key] = Value
+end
+
+Metatable.__call = function(self, Key, ...) 
+	return Game[Key](Game, ...) 
+end
+
+Metatable.__tostring = function(self)
+	return Game.Name
+end
+
+-- // Other
+
+Game.DescendantAdded:Connect(function(AddedInstance)
+	if NilInstances[AddedInstance] then
+		table.remove(NilInstances, table.find(NilInstances, AddedInstance))
+	end
+end)
+
+Game.DescendantRemoving:Connect(function(RemovedInstance)
+	if not NilInstances[RemovedInstance] then
+		table.insert(NilInstances, RemovedInstance)
+	end
+end)
+
+UserInputService.WindowFocusReleased:Connect(function()
+	IsActive = false
+end)
+
+UserInputService.WindowFocused:Connect(function()
+	IsActive = true
+end)
+
+local FPSSetTo = 0 -- Unlimited
+local getfenv = getfenv
+local FEnv = getfenv()
+
+local Cache = {}
+local IsInExecutorClosure = {}
+local CoreFunctions = { "assert", "collectgarbage", "dofile", "error", "getmetatable", "ipairs", "load", "loadfile", "next", "pairs", "pcall", "print", "rawequal", "rawget", "rawset", "require", "select", "setmetatable", "tonumber", "tostring", "type", "xpcall", "warn" }
+
+local Fiu = require(script.Fiu)
+local Interpret = Fiu.luau_load
+local OldCompile = require(script.LuauCompiler).luau_compile
+local function Compile(code)
+	local Data = HttpService:JSONEncode({ code = code })
+	local Response = CallRequest({
+		Url = "nopenopev/compile",
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json"
+		},
+		Body = Data
+	})
+	
+	return Response.Body
+end
+
+local function CClosure(Function) -- Credits: Emper :3333
+	local Return = coroutine.wrap(function(...)
+		local Arguments = {coroutine.yield()}
+		while true do
+			Arguments = {coroutine.yield(Function(table.unpack(Arguments)))}
+		end
+	end)
+
+	Return()
+	return Return
+end
+
+local FindFunctionByCallback = CClosure(function(Table, Function)
+	for i, v in pairs(Table) do
+		if v == Function then
+			return i
+		end
+	end
+	return nil
+end)
+
+--[[
+Todo:
+access to dumpstring and debug options:
+	debug.getupvalue/getupvalues
+	debug.setupvalue
+	getscripthash
+	getscriptbytecode
+		
+libraries :
+	crypt ("MIGHT" use vastys)
+	drawing (will probably use vastys)
+	lz4compress (will consider)
+	
+	console (just basic ui lib)
+	filesystem (table)
+]]
+
+local Environment = {}
+setmetatable(Environment,{ 
+	__index = FEnv, 
+	__newindex = function(table, key, value)
+		if typeof(value) == "function" then
+			IsInExecutorClosure[key] = value
+		end
+
+		rawset(table, key, value)
+	end
+})
+
+local loadstring = function(Code) -- Can not be C closure.
+	--[[
+	local OldCompiler = OldCompile(Code)
+	local NewCompiler = Compile(Code)
+	
+	print(OldCompiler == NewCompiler)
+	print(OldCompiler)
+	print(NewCompiler)
+	
+	local a = string.gsub(NewCompiler, "\t%d*$", "")
+	local b = string.gsub(OldCompiler, "\t%d*$", "")
+	
+	local c = string.gsub(a, "\t$", "")
+	local d = string.gsub(b, "\t$", "")
+	
+	print(c)
+	print(d)	
+	print(string.len(NewCompiler), string.len(OldCompiler))
+	-- "\t$", ""
+	]]
+	local NewCompiler = Compile(Code)
+	
+	return Interpret(NewCompiler:gsub("\t", ""):gsub("%s*%d+$", ""), Environment)
+end
+
+Environment["_G"] = {}
+Environment["shared"] = {}
+Environment["game"] = NewProxy
+Environment["math"] = table.clone(math)
+Environment["Vector3"] = table.clone(Vector3)
+Environment["string"] = table.clone(string)
+Environment["CFrame"] = table.clone(CFrame)
+Environment["Vector2"] = table.clone(Vector2)
+Environment["UDim2"] = table.clone(UDim2)
+Environment["loadstring"] = loadstring
+
+Environment["checkcaller"] = CClosure(function()
+	return true -- blah blah blah consider it true since you cant hook anything anyway (at least from what i understand)
+end)
+
+Environment['cache'] = {
+	invalidate = CClosure(function(Object)
+		Cache[Object] = 'invalid'
+		pcall(function()
+			Object.Parent = nil
+			Object = nil
+		end)
+	end),
+	
+	iscached = CClosure(function(Object)
+		return Cache[Object] ~= 'invalid'
+	end),
+	
+	replace = CClosure(function(Object, New)
+		local Locate = table.find(Cache, Object)
+		if Locate then
+			Cache[Locate] = New
+		end
+	end),
+}
+
+Environment['setfpscap'] = CClosure(function(NewFPS)
+	FPSSetTo = NewFPS
+end)
+
+Environment["cloneref"] = CClosure(function(Object) -- "oh my god kade what is that" mfs expect me to get lua registries on level 2 capabilities with no bridging or memory access at all
+	return setmetatable({}, {
+		__index = Object,
+		__newindex = function(_, key, value)
+			Object[key] = value
+		end,
+		__eq = function(_, other)
+			return Object == other
+		end
+	})
+end)
+
+Environment["compareinstances"] = CClosure(function(Object1, Object2)
+	if typeof(Object1) == "table" then
+		Object1 = getmetatable(Object1).__index
+	end
+	if typeof(Object2) == "table" then
+		Object2 = getmetatable(Object2).__index
+	end
+	
+	return Object1 == Object2
+end)
+
+Environment["clonefunction"] = CClosure(function(Function)
+	return function(...)
+		local Success, Result = pcall(Function, ...)
+		if Success then
+			return Result
+		end
+
+		error(Result, 2)
+	end
+end)
+
+Environment["getscriptbytecode"] = function(Script)
+	local Source = Script.LinkedSource
+	
+	if Source then
+		return Compile(Source) -- for now.
+	end
+end
+
+Environment["getfenv"] = CClosure(function(target)
+	local fenv = getfenv(target)
+	if fenv == FEnv then
+		return Environment
+	else
+		return fenv
+	end
+end)
+
+Environment["getrenv"] = CClosure(function()
+	return FEnv
+end)
+
+Environment["getgenv"] = CClosure(function()
+	return Environment
+end)
+
+Environment["isnetworkowner"] = CClosure(function(Part)
+	if typeof(Part) ~= "Instance" and not Part:IsA("BasePart") then
+		warn("isnetworkowner: Argument is not a BasePart.")
+		return
+	end
+	
+	return Part and not Part.Anchored and Part.ReceiveAge == 0
+end)
+
+Environment["newcclosure"] = function(Function)
+	local wrap = CClosure(Function)
+	table.insert(IsInExecutorClosure, wrap)
+	return wrap
+end
+
+Environment["iscclosure"] = CClosure(function(Function)
+	if typeof(Function) ~= "function" then
+		warn("iscclosure: Argument is not a function.")
+		return
+	end
+	
+	return debug.info(Function, 's') == "[C]"
+end)
+
+Environment["islclosure"] = CClosure(function(Function)
+	if typeof(Function) ~= "function" then
+		warn("islclosure: Argument is not a function.")
+		return
+	end
+	
+	return debug.info(Function, 's') ~= "[C]"
+end)
+
+Environment["isexecutorclosure"] = CClosure(function(Function)
+	if typeof(Function) ~= "function" then
+		warn("isexecutorclosure: Argument is not a function.")
+		return false
+	end
+
+	local FunctionName = FindFunctionByCallback(IsInExecutorClosure, Function)
+	
+	if FunctionName then
+		local IsOurClosure = Function == IsInExecutorClosure[FunctionName]
+		local IsCFunction = debug.info(Function, 's') == "[C]"
+		local IsValidFEnv = FEnv and FEnv[FunctionName] == false
+
+		return IsOurClosure and IsCFunction
+	end
+	
+	local IsLuau = debug.info(Function, "n") ~= nil
+	
+	if IsLuau then
+		if FindFunctionByCallback(CoreFunctions, debug.info(Function, "n")) then 
+			return false
+		else
+			return debug.info(Function, "n") ~= nil
+		end
+	end
+end)
+
+Environment["checkclosure"] = Environment["isexecutorclosure"]
+Environment["isourclosure"] = Environment["isexecutorclosure"]
+
+Environment["identifyexecutor"] = CClosure(function()
+	return "Kadesploit", "v1.0.0"
+end)
+
+Environment["getexecutorname"] = Environment["identifyexecutor"]
+
+Environment["isscriptable"] = CClosure(function(ProvidedInstance, Property)
+	if typeof(ProvidedInstance) ~= "Instance" and typeof(Property) ~= "string" then
+		warn("setscriptable: Incorrect arguments (Either 1st or 2nd).")
+		return
+	end
+	
+	local Boolean, Error = pcall(function() ProvidedInstance[Property] = ProvidedInstance[Property] end)
+	return Boolean
+end)
+
+Environment["setclipboard"] = CClosure(function(Argument)
+	print("Clipboard", Argument)
+end)
+
+Environment["toclipboard"] = Environment["setclipboard"]
+
+Environment['fireclickdetector'] = CClosure(function(ClickDetector)
+	if typeof(ClickDetector) ~= "ClickDetector" then
+		return
+	end
+
+	local Parent = ClickDetector.Parent
+	
+	if (not Parent) or Parent and typeof(Parent) ~= "Part" then
+		return
+	end
+
+	local CameraCalc = workspace.CurrentCamera:WorldToViewportPoint(Parent.Position)
+	local Resolution = workspace.CurrentCamera.ViewportSize 
+	
+	local Input = Game:GetService("VirtualInputManager")
+	Input:SendMouseButtonEvent(Resolution.X, Resolution.Y, 0, true, game, 1)
+	Input:SendMouseButtonEvent(Resolution.X, Resolution.Y, 0, false, game, 1)
+end)
+
+Environment["getnilinstances"] = CClosure(function()
+	return NilInstances
+end)
+
+Environment["getgc"] = CClosure(function()
+	print("xeno getgc (this shit sucks :Sob:, but whatever it takes to make script compatibility better.)")
+	return table.clone(NilInstances)
+end)
+
+Environment["getinstances"] = CClosure(function()
+	return game:GetDescendants()
+end)
+
+Environment["getloadedmodules"] = CClosure(function()
+	local Data = {}
+	
+	for _, v in game:GetDescendants() do
+		if v:IsA("ModuleScript") then
+			table.insert(Data, v)
+		end
+	end
+	
+	return Data
+end)
+
+Environment["getscripts"] = CClosure(function()
+	local Data = {}
+
+	for _, v in game:GetDescendants() do
+		if v:IsA("LocalScript") then
+			table.insert(Data, v)
+		end
+	end
+
+	return Data
+end)
+
+Environment["getrunningscripts"] = CClosure(function()
+	local Data = {}
+
+	for _, v in game:GetDescendants() do
+		if v:IsA("LocalScript") and v.Enabled then
+			table.insert(Data, v)
+		end
+	end
+
+	return Data
+end)
+
+Environment["isreadonly"] = CClosure(function(Table)
+	return table.isfrozen(Table)
+end)
+
+Environment["gethui"] = CClosure(function()
+	return LocalPlayer.PlayerGui
+end)
+
+Environment["getthreadidentity"] = CClosure(function()
+	return 2
+end)
+
+Environment["isrbxactive"] = CClosure(function()
+	return IsActive
+end)
+Environment["isgameactive"] = Environment["isrbxactive"]
+
+Environment["getidentity"] = Environment["getthreadidentity"]
+Environment["getthreadcontext"] = Environment["getthreadidentity"]
+
+Environment["request"] = CallRequest
+Environment["http_request"] = CallRequest
+Environment["http"] = {["request"] = CallRequest}
+
+Environment["toggle_env"] = CClosure(function()
+	Environment['game'] = Environment['game']~=NewProxy and NewProxy or game
+	print("env: ", Environment['game']==NewProxy)
+end)
+
+
+local ExecuteTabSignal = Execute.MouseButton1Down:Connect(function()
+	if CurrentTab then
+		local Textbox = CurrentTab:WaitForChild("ScrollingFrame"):WaitForChild("TextBox")
+
+		loadstring(Textbox.Text, true)()
+	end
+end)
+
+local ScriptsSignal = Scripts.MouseButton1Down:Connect(function()
+	ScriptHub.Visible = not ScriptHub.Visible
+end)
+
+for _, v in ScriptHub:GetChildren() do
+	if v:IsA("TextButton") then
+		v.MouseButton1Down:Connect(function()
+
+			loadstring(v.Value.Value, true)()
+		end)
+	end
+end
+
+local AltPressed = false
+local UserInputService = game:GetService("UserInputService")
+
+UserInputService.InputBegan:Connect(function(Input)
+	if Input.KeyCode == Enum.KeyCode.LeftAlt then
+		AltPressed = true
+	end
+	
+	if CurrentTab and CurrentTabOpener and AltPressed then
+		if Input.KeyCode == Enum.KeyCode.Left then
+			local Count = tonumber(string.match(CurrentTab.Name, "%d+")) - 1
+
+			if TabsFolder:FindFirstChild("Tab "..Count) then
+				CurrentTab.Visible = false
+				CurrentTabOpener.BackgroundTransparency = 1
+				
+				CurrentTab = TabsFolder:FindFirstChild("Tab "..Count) 
+				CurrentTabOpener = TabList:FindFirstChild("Tab "..Count)
+
+				CurrentTab.Visible = true
+				CurrentTabOpener.BackgroundTransparency = 0.9
+				
+				CurrentTab:FindFirstChild("ScrollingFrame"):FindFirstChild("TextBox"):CaptureFocus()
+			end
+			
+		elseif Input.KeyCode == Enum.KeyCode.Right then
+			local Count = tonumber(string.match(CurrentTab.Name, "%d+")) + 1
+
+			if TabsFolder:FindFirstChild("Tab "..Count) then
+				CurrentTab.Visible = false
+				CurrentTabOpener.BackgroundTransparency = 1
+
+				CurrentTab = TabsFolder:FindFirstChild("Tab "..Count) 
+				CurrentTabOpener = TabList:FindFirstChild("Tab "..Count)
+
+				CurrentTab.Visible = true
+				CurrentTabOpener.BackgroundTransparency = 0.9
+				
+				CurrentTab:FindFirstChild("ScrollingFrame"):FindFirstChild("TextBox"):CaptureFocus()
+			end
+		elseif Input.KeyCode == Enum.KeyCode.E then
+			local NewTab = Assets:WaitForChild("Tab"):Clone()
+			local TabOpener = Assets:WaitForChild("TabOpener"):Clone()
+			local ScrollingFrame = NewTab:WaitForChild("ScrollingFrame")
+
+			local Textbox = ScrollingFrame:WaitForChild("TextBox")
+			local LineCounter = ScrollingFrame:WaitForChild("LineCounter")
+			
+			HideTabs()
+
+			NewTab.Visible = true
+			TabOpener.Visible = true
+			TabOpener.BackgroundTransparency = 0.9
+
+			local String = "Tab "..tostring(#TabList:GetChildren())
+
+			TabOpener.Name = String
+			TabOpener.Text = String
+
+			NewTab.Name = String
+			NewTab.Parent = TabsFolder
+			TabOpener.Parent = TabList
+			
+			local NewTabLiner = Textbox:GetPropertyChangedSignal("Text"):Connect(function()
+				local _, Count = Textbox.text:gsub("\n", "")
+
+				LineCounter.Text = ""
+				for Number = 0, Count do
+					LineCounter.Text = LineCounter.Text..tostring(Number+1).."\n"
+				end
+			end)
+
+			local TabOpenerSignal = TabOpener.MouseButton1Down:Connect(function()
+				HideTabs()
+
+				NewTab.Visible = true
+				TabOpener.BackgroundTransparency = 0.9
+
+				CurrentTab = NewTab
+				CurrentTabOpener = TabOpener
+			end)
+
+			CurrentTab = NewTab
+			CurrentTabOpener = TabOpener
+			
+			Textbox:CaptureFocus()
+			
+		elseif Input.KeyCode == Enum.KeyCode.D then
+			local Count = #TabsFolder:GetChildren()
+
+			if CurrentTab and CurrentTabOpener then
+				CurrentTab:Destroy()
+				CurrentTabOpener:Destroy()
+				HideTabs()
+
+				if Count > 1 then
+					local String = "Tab "..tostring(Count-1)
+					local String2 = "Tab "..tostring(Count-1)
+					local String3 = "Tab "..tostring(Count+1)
+					CurrentTab = TabsFolder:FindFirstChild(String) or TabsFolder:FindFirstChild(String2) or TabsFolder:FindFirstChild(String3) or TabsFolder:FindFirstChildOfClass("Frame")  
+					CurrentTabOpener = TabList:FindFirstChild(String) or TabList:FindFirstChild(String2) or TabList:FindFirstChild(String3) or TabList:FindFirstChildOfClass("TextButton")
+
+					CurrentTab.Visible = true
+					CurrentTabOpener.BackgroundTransparency = 0.9
+					CurrentTab:FindFirstChild("ScrollingFrame"):FindFirstChild("TextBox"):CaptureFocus()
+
+				else
+					CurrentTab = nil
+					CurrentTabOpener = nil
+				end
+				
+
+			end
+			
+
+		elseif Input.KeyCode == Enum.KeyCode.I then
+			if CurrentTab then
+				CurrentTab:FindFirstChild("ScrollingFrame"):FindFirstChild("TextBox").Text = ""
+			end
+		end
+	end
+end)
+
+Instance.new("Part", workspace).Parent = nil
+
+UserInputService.InputEnded:Connect(function(Input)
+	if Input.KeyCode == Enum.KeyCode.LeftAlt then
+		AltPressed = false
+	end
+end)
+
+while true do
+	local t0 = tick()
+	RunService.Heartbeat:Wait()
+	
+	if FPSSetTo > 1 then
+		repeat until (t0 + 1/FPSSetTo) < tick()
+	end
+end
