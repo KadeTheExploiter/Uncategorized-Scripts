@@ -10,7 +10,7 @@
 - Licensing: BSD-3
 
 ```lua
-
+-- For Details, check https://github.com/KadeTheExploiter/Uncategorized-Scripts/blob/main/UI-Libraries/Machina/DocumentedExample.luau
 local HttpRequest = request or http_request or http and http.request or syn and syn.request
 local ModuleData = HttpRequest({Method = "GET", Url = "https://raw.githubusercontent.com/KadeTheExploiter/Uncategorized-Scripts/refs/heads/main/UI-Libraries/Machina/Module.luau"})
 local GuiLibrary = loadstring(ModuleData.Body)()
