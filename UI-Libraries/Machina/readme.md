@@ -2,11 +2,10 @@
 <img width="646" height="530" alt="image" src="https://github.com/user-attachments/assets/19ae680d-b1c6-46bc-8213-a859d07f4f46" />
 
 # Features:
-- Resizing
-- Maximizing and Minimizing
+- Resizing.
+- Maximizing and Minimizing.
 - A lot of eye candy.
-- Fairly decent codebase
-- Lots of customization.
+- Fairly decent codebase.
 - Licensing: BSD-3
 
 ```lua
