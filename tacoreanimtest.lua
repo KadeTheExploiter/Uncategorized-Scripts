@@ -9,10 +9,15 @@
 	✅ Hat lookup & alignment
 	🟡 Velocity logic - to be continued
 	✅ Respawn handling 
+	> ??? Flinging (Planned)
 	🟡 Camera management - partial
-	> ✅ Custom Movement Handler
-	> 🟧 organize code structure
-	> ✅ load unless asked to feature
+	🟡 Custom Movement Handler - pc awesome, mobile needs improvement
+		- specifing mobile issue: Camera moves alongside with the pointer, also its not respecting the set borders and it is not possible to move your character because of the gui joystick taking the input
+	🟡 organize code structure
+	✅ load unless asked to feature
+	🟡 camera fixes - mobile needs improvement, pc is flawless
+
+
 	❌ compatibility with krypton
 	❌ other configs
 	❌ kadeapi
@@ -102,6 +107,8 @@ local IS_CHAR_VAR_CHANGABLE = ReanimationSettings.ApplyCharacterVariable
 local IS_BODY_HIDING_ENABLED = ReanimationSettings.HideServerCharacter
 local RESPAWN_DELAY_NUMBER = ReanimationSettings.DelayRespawnTime
 local MOBILE_MOVE_DEADZONE = ReanimationSettings.MobileSettings.Deadzone
+local CAMERA_SENSITIVITY = 0.006
+local MAX_CAMERA_PITCH = math.rad(80)
 
 local ClientRigAnimationsToggled = ReanimationSettings.RigAnimations
 
@@ -123,6 +130,11 @@ local RBXScriptSignals: {RBXScriptSignal} = {}
 
 local KeyInputs = {W = {0, 0, -1}, A = {0, -1, 0}, S = {0, 0, 1}, D = {0, 1, 0}}
 local MovementDirection = _Vector3zero
+
+local MobileMovementTouch = nil
+local MobileMovementStartPos = nil
+local MobileCameraLock = false
+local MobileMoveVector = _Vector3zero
 
 local Workspace: Workspace = _FindFirstChildOfClass(_DataModel, "Workspace")
 local Players: Players = _FindFirstChildOfClass(_DataModel, "Players")
@@ -259,7 +271,16 @@ local function RetrieveAccoutrements()
 	end
 end
 
--- [[ Camera Functions ]] -- 
+-- [[ Miscellacious Functions ]] -- 
+
+local function LoadRBXScriptSignalTable(Table: {...})
+	for SignalName, Data in Table do 
+		local Signal: RBXScriptSignal = Data[1]
+		local Function: (...any) -> (...any) = Data[2]
+
+		RBXScriptSignals[Table][SignalName] = Signal:Connect(Function)
+	end
+end
 
 local function ResetCameraPosition()
 	Camera.CameraSubject = ClientHumanoid
@@ -323,14 +344,34 @@ end
 -- [[ Movement RBXScriptSignals ]] --
 
 local MobileRBXScriptSignalFunctions = {
-	['TouchMoved'] = {UserInputService.TouchMoved, function(Touch, GameProcessed)
-		if GameProcessed then return end
-		
+	['TouchStarted'] = {UserInputService.TouchStarted, function(Touch, GameProcessed)
+		local ViewportSize = Camera.ViewportSize
 		local TouchPos = Touch.Position
-		local ScreenCenter = Camera.ViewportSize * 0.5
 		
-		local DeltaX = TouchPos.X - ScreenCenter.X
-		local DeltaY = TouchPos.Y - ScreenCenter.Y
+		if TouchPos.X > ViewportSize.X * 0.4 or GameProcessed then
+			return
+		end
+		
+		if not MobileMovementTouch then
+			MobileMovementTouch = Touch
+			MobileMovementStartPos = TouchPos
+			MobileMoveVector = _Vector3zero
+			MobileCameraLock = true
+		end
+	end},
+	
+	['TouchMoved'] = {UserInputService.TouchMoved, function(Touch, GameProcessed)
+		if not MobileMovementTouch or Touch ~= MobileMovementTouch then
+			return
+		end
+		
+		if MobileCameraLock then
+			Camera.CFrame = LastCameraCFrame
+		end
+		
+		local CurrentPos = Touch.Position
+		local DeltaX = CurrentPos.X - MobileMovementStartPos.X
+		local DeltaY = CurrentPos.Y - MobileMovementStartPos.Y
 		
 		local Magnitude = _mathsqrt(DeltaX * DeltaX + DeltaY * DeltaY)
 		
@@ -338,24 +379,29 @@ local MobileRBXScriptSignalFunctions = {
 			local NormX = DeltaX / Magnitude
 			local NormY = DeltaY / Magnitude
 			
-			local CameraCFrame = Camera.CFrame
+			local CameraCFrame = LastCameraCFrame
 			local CameraLook = CameraCFrame.LookVector
 			local CameraRight = CameraCFrame.RightVector
 			
 			local MoveX = CameraRight.X * NormX - CameraLook.X * NormY
 			local MoveZ = CameraRight.Z * NormX - CameraLook.Z * NormY
 			
-			MovementDirection = _Vector3new(MoveX, 0, MoveZ).Unit
-			ClientHumanoid:Move(MovementDirection, false)
+			MobileMoveVector = _Vector3new(MoveX, 0, MoveZ).Unit
 		else
-			MovementDirection = _Vector3zero
-			ClientHumanoid:Move(_Vector3zero, false)
+			MobileMoveVector = _Vector3zero
 		end
+		
+		ClientHumanoid:Move(MobileMoveVector, false)
 	end},
 	
-	['TouchEnded'] = {UserInputService.TouchEnded, function()
-		MovementDirection = _Vector3zero
-		ClientHumanoid:Move(_Vector3zero, false)
+	['TouchEnded'] = {UserInputService.TouchEnded, function(Touch, GameProcessed)
+		if MobileMovementTouch and Touch == MobileMovementTouch then
+			MobileMovementTouch = nil
+			MobileMovementStartPos = nil
+			MobileMoveVector = _Vector3zero
+			MobileCameraLock = false
+			ClientHumanoid:Move(_Vector3zero, false)
+		end
 	end}
 }
 
@@ -550,10 +596,10 @@ local Library = {
 			AnimateScript.Parent = ClientRig
 		end
 
+		local RootPartCurrentCFrame = RootPart.CFrame
 		ClientRig.Parent = Workspace
-		ClientRig:PivotTo(RootPart.CFrame)
 		SuppressDeath()
-		
+
 		for _, Index: Instance in _GetDescendants(ClientRig) do
 			if _IsA(Index, "BasePart") then
 				Index.Transparency = 1
@@ -569,32 +615,28 @@ local Library = {
 				}
 			end
 		end
+		LoadRBXScriptSignalTable(RBXScriptSignalFunctions)
 
-		for SignalName, Data in RBXScriptSignalFunctions do 
-			local Signal: RBXScriptSignal = Data[1]
-			local Function: (...any) -> (...any) = Data[2]
-
-			RBXScriptSignals[SignalName] = Signal:Connect(Function)
+		if UserInputService.TouchEnabled then
+			LoadRBXScriptSignalTable(MobileRBXScriptSignalFunctions)
 		end
 
-		for SignalName, Data in KBMRBXScriptSignalFunctions do 
-			local Signal: RBXScriptSignal = Data[1]
-			local Function: (...any) -> (...any) = Data[2]
-
-			RBXScriptSignals[SignalName] = Signal:Connect(Function)
+		if UserInputService.KeyboardEnabled then
+			LoadRBXScriptSignalTable(KBMRBXScriptSignalFunctions)
 		end
+
+		ClientRig:PivotTo(RootPartCurrentCFrame)
 
 		if ReanimationSettings.UsePermanentDeath and replicatesignal then
 			replicatesignal(LocalPlayer.ConnectDiedSignalBackend)
 			_taskwait(Players.RespawnTime + RESPAWN_DELAY_NUMBER)
 			
 			FinalizeCharacterAdded()
-		
 			replicatesignal(LocalPlayer.Kill)
 		else
 			FinalizeCharacterAdded()
 		end
-		
+
 		if IS_CHAR_VAR_CHANGABLE then
 			ApplyCharacterProperty()
 		end
